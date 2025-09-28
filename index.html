@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phonkify - Underground Phonk Music</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 2rem 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid rgba(138, 43, 226, 0.3);
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #8a2be2, #00ffff, #ff00ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            color: #cccccc;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+        }
+
+        /* Music Player */
+        .music-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 1rem;
+            z-index: 200;
+            border-top: 2px solid rgba(138, 43, 226, 0.5);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .music-player.active {
+            transform: translateY(0);
+        }
+
+        .player-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 1rem;
+        }
+
+        .current-song-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .current-thumbnail {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid rgba(138, 43, 226, 0.5);
+        }
+
+        .song-details {
+            min-width: 0;
+        }
+
+        .song-title {
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 0.2rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-artist {
+            color: #cccccc;
+            font-size: 0.9rem;
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 2;
+            justify-content: center;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(138, 43, 226, 0.3);
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+        }
+
+        .play-pause-btn {
+            background: linear-gradient(45deg, #8a2be2, #00ffff);
+            font-size: 1.8rem;
+            width: 60px;
+            height: 60px;
+        }
+
+        .player-extras {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(45deg, #8a2be2, #00ffff);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Audio Visualizer */
+        .visualizer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .visualizer-bar {
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to top, #8a2be2, #00ffff);
+            animation: pulse 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { height: 20%; }
+            100% { height: 80%; }
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            padding-bottom: 120px; /* Space for fixed player */
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #ffffff;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 2px;
+            background: linear-gradient(45deg, #8a2be2, #00ffff);
+        }
+
+        /* Song Grid */
+        .song-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .song-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(138, 43, 226, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .song-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+
+        .song-card:hover::before {
+            opacity: 1;
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .song-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(138, 43, 226, 0.3);
+            border-color: rgba(138, 43, 226, 0.8);
+        }
+
+        .song-thumbnail {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .song-card:hover .song-thumbnail {
+            filter: brightness(1.2) saturate(1.2);
+        }
+
+        .song-info {
+            position: relative;
+        }
+
+        .song-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+        }
+
+        .song-description {
+            color: #cccccc;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Recommendations Sidebar */
+        .recommendations {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 350px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            transition: right 0.3s ease;
+            z-index: 150;
+            border-left: 2px solid rgba(138, 43, 226, 0.5);
+            overflow-y: auto;
+        }
+
+        .recommendations.active {
+            right: 0;
+        }
+
+        .close-recommendations {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .recommendation-item:hover {
+            background: rgba(138, 43, 226, 0.2);
+            transform: translateX(10px);
+        }
+
+        .rec-thumbnail {
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+
+        .rec-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .rec-title {
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 0.2rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .rec-artist {
+            color: #cccccc;
+            font-size: 0.8rem;
+        }
+
+        /* Daily Mix Section */
+        .daily-mix {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            text-align: center;
+        }
+
+        .mix-button {
+            background: linear-gradient(45deg, #8a2be2, #00ffff);
+            border: none;
+            color: #ffffff;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 1rem;
+        }
+
+        .mix-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(138, 43, 226, 0.4);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .player-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .current-song-info,
+            .player-controls,
+            .player-extras {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .song-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+
+            .recommendations {
+                width: 100%;
+                right: -100%;
+            }
+
+            .logo {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1rem;
+                padding-bottom: 200px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #cccccc;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(138, 43, 226, 0.3);
+            border-top: 3px solid #8a2be2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Hidden audio element */
+        #audioPlayer {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1 class="logo">PHONKIFY</h1>
+        <p class="tagline">UNDERGROUND PHONK VIBES</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Daily Mix Section -->
+        <div class="daily-mix">
+            <h2 class="section-title">🎵 Daily Phonk Mix</h2>
+            <p style="color: #cccccc; margin-bottom: 1rem;">Discover new underground phonk tracks curated just for you</p>
+            <button class="mix-button" onclick="playRandomSong()">🎲 Play Random Mix</button>
+            <button class="mix-button" onclick="shufflePlaylist()">🔀 Shuffle All</button>
+        </div>
+
+        <!-- Songs Section -->
+        <h2 class="section-title">🔥 Phonk Collection</h2>
+        <div class="song-grid" id="songGrid">
+            <!-- Songs will be loaded here dynamically -->
+        </div>
+
+        <!-- Loading indicator -->
+        <div class="loading" id="loading">Loading tracks...</div>
+    </div>
+
+    <!-- Music Player -->
+    <div class="music-player" id="musicPlayer">
+        <div class="visualizer">
+            <!-- Visualizer bars will be generated here -->
+        </div>
+        <div class="player-content">
+            <div class="current-song-info">
+                <img src="" alt="Current Song" class="current-thumbnail" id="currentThumbnail">
+                <div class="song-details">
+                    <div class="song-title" id="currentTitle">No song selected</div>
+                    <div class="song-artist" id="currentArtist">Phonk Artist</div>
+                </div>
+            </div>
+            
+            <div class="player-controls">
+                <button class="control-btn" onclick="previousSong()" title="Previous">⏮</button>
+                <button class="control-btn play-pause-btn" onclick="togglePlay()" id="playPauseBtn" title="Play/Pause">▶</button>
+                <button class="control-btn" onclick="nextSong()" title="Next">⏭</button>
+                <button class="control-btn" onclick="toggleShuffle()" id="shuffleBtn" title="Shuffle">🔀</button>
+                <button class="control-btn" onclick="toggleRepeat()" id="repeatBtn" title="Repeat">🔁</button>
+            </div>
+            
+            <div class="player-extras">
+                <button class="control-btn" onclick="toggleRecommendations()" title="Related Songs">📝</button>
+                <div class="volume-control">
+                    <span style="font-size: 1.2rem;">🔊</span>
+                    <input type="range" class="volume-slider" min="0" max="100" value="50" onchange="setVolume(this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations Sidebar -->
+    <div class="recommendations" id="recommendations">
+        <button class="close-recommendations" onclick="toggleRecommendations()">✕</button>
+        <h3 style="margin-bottom: 2rem; color: #ffffff;">Related Tracks</h3>
+        <div id="recommendationsList">
+            <!-- Recommendations will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Hidden Audio Element -->
+    <audio id="audioPlayer" preload="metadata"></audio>
+
+    <script>
+        // ===== SONG DATABASE =====
+        // This is where you add your songs! Just follow this format:
+        const songs = [
+            {
+                id: 1,
+                title: "Phonk Drive",
+                artist: "Underground Artist",
+                videoPath: "videos/song1.mp4",
+                thumbnail: "thumbnails/song1.jpg",
+                description: "Dark phonk vibes for late night drives",
+                related: [2, 3, 4] // IDs of related songs
+            },
+            {
+                id: 2,
+                title: "Night Drift",
+                artist: "Phonk Producer",
+                videoPath: "videos/song2.mp4",
+                thumbnail: "thumbnails/song2.jpg",
+                description: "Bass heavy phonk with cowbell magic",
+                related: [1, 3, 5]
+            },
+            {
+                id: 3,
+                title: "Shadow Realm",
+                artist: "Dark Phonk",
+                videoPath: "videos/song3.mp4",
+                thumbnail: "thumbnails/song3.jpg",
+                description: "Atmospheric phonk from the underground",
+                related: [1, 2, 4]
+            },
+            {
+                id: 4,
+                title: "Midnight Chase",
+                artist: "Phonk Master",
+                videoPath: "videos/song4.mp4",
+                thumbnail: "thumbnails/song4.jpg",
+                description: "High energy phonk for the streets",
+                related: [1, 3, 5]
+            },
+            {
+                id: 5,
+                title: "Purple Haze",
+                artist: "Neon Phonk",
+                videoPath: "videos/song5.mp4",
+                thumbnail: "thumbnails/song5.jpg",
+                description: "Ethereal phonk with neon aesthetics",
+                related: [2, 4, 1]
+            }
+        ];
+
+        // ===== PLAYER STATE =====
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let isShuffleOn = false;
+        let isRepeatOn = false;
+        let playlist = [...songs]; // Current playlist
+        let originalPlaylist = [...songs]; // Original order for shuffle toggle
+
+        // ===== DOM ELEMENTS =====
+        const audioPlayer = document.getElementById('audioPlayer');
+        const musicPlayer = document.getElementById('musicPlayer');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const currentThumbnail = document.getElementById('currentThumbnail');
+        const currentTitle = document.getElementById('currentTitle');
+        const currentArtist = document.getElementById('currentArtist');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const repeatBtn = document.getElementById('repeatBtn');
+        const recommendations = document.getElementById('recommendations');
+
+        // ===== INITIALIZE WEBSITE =====
+        function initializeWebsite() {
+            loadSongsToGrid();
+            generateVisualizer();
+            setupAudioEvents();
+            
+            // Show loading state briefly for effect
+            document.getElementById('loading').classList.add('active');
+            setTimeout(() => {
+                document.getElementById('loading').classList.remove('active');
+            }, 1000);
+        }
+
+        // ===== LOAD SONGS TO GRID =====
+        function loadSongsToGrid() {
+            const songGrid = document.getElementById('songGrid');
+            songGrid.innerHTML = '';
+
+            songs.forEach((song, index) => {
+                const songCard = document.createElement('div');
+                songCard.className = 'song-card';
+                songCard.onclick = () => playSong(index);
+                
+                songCard.innerHTML = `
+                    <img src="${song.thumbnail}" alt="${song.title}" class="song-thumbnail" 
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2NjYyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+                    <div class="song-info">
+                        <div class="song-name">${song.title}</div>
+                        <div class="song-description">${song.description}</div>
+                    </div>
+                `;
+                
+                songGrid.appendChild(songCard);
+            });
+        }
+
+        // ===== PLAY SPECIFIC SONG =====
+        function playSong(index) {
+            currentSongIndex = index;
+            const song = playlist[currentSongIndex];
+            
+            // Update audio source
+            audioPlayer.src = song.videoPath;
+            
+            // Update player UI
+            currentThumbnail.src = song.thumbnail;
+            currentTitle.textContent = song.title;
+            currentArtist.textContent = song.artist;
+            
+            // Show player
+            musicPlayer.classList.add('active');
+            
+            // Play audio
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                updatePlayPauseButton();
+                loadRecommendations(song.id);
+            }).catch((error) => {
+                console.error('Error playing audio:', error);
+                alert('Could not play this track. Please check if the file exists.');
+            });
+        }
+
+        // ===== TOGGLE PLAY/PAUSE =====
+        function togglePlay() {
+            if (audioPlayer.src === '' || audioPlayer.src === window.location.href) {
+                // No song selected, play first song
+                playSong(0);
+                return;
+            }
+
+            if (isPlaying) {
+                audioPlayer.pause();
+                isPlaying = false;
+            } else {
+                audioPlayer.play().then(() => {
+                    isPlaying = true;
+                }).catch((error) => {
+                    console.error('Error playing audio:', error);
+                });
+            }
+            updatePlayPauseButton();
+        }
+
+        // ===== UPDATE PLAY/PAUSE BUTTON =====
+        function updatePlayPauseButton() {
+            playPauseBtn.innerHTML = isPlaying ? '⏸' : '▶';
+        }
+
+        // ===== NEXT SONG =====
+        function nextSong() {
+            if (isRepeatOn && playlist.length > 1) {
+                // If repeat is on, play current song again
+                playSong(currentSongIndex);
+            } else if (currentSongIndex < playlist.length - 1) {
+                playSong(currentSongIndex + 1);
+            } else {
+                // End of playlist, go to beginning
+                playSong(0);
+            }
+        }
+
+        // ===== PREVIOUS SONG =====
+        function previousSong() {
+            if (currentSongIndex > 0) {
+                playSong(currentSongIndex - 1);
+            } else {
+                // Beginning of playlist, go to end
+                playSong(playlist.length - 1);
+            }
+        }
+
+        // ===== SHUFFLE FUNCTIONALITY =====
+        function toggleShuffle() {
+            isShuffleOn = !isShuffleOn;
+            
+            if (isShuffleOn) {
+                // Create shuffled playlist but keep current song at current position
+                const currentSong = playlist[currentSongIndex];
+                const otherSongs = playlist.filter((_, index) => index !== currentSongIndex);
+                
+                // Shuffle other songs
+                for (let i = otherSongs.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [otherSongs[i], otherSongs[j]] = [otherSongs[j], otherSongs[i]];
+                }
+                
+                // Reconstruct playlist with current song in same position
+                playlist = [...otherSongs.slice(0, currentSongIndex), currentSong, ...otherSongs.slice(currentSongIndex)];
+                
+                shuffleBtn.style.background = 'rgba(138, 43, 226, 0.5)';
+                shuffleBtn.style.color = '#00ffff';
+            } else {
+                // Restore original order
+                playlist = [...originalPlaylist];
+                // Find current song's original index
+                const currentSong = playlist[currentSongIndex];
+                currentSongIndex = originalPlaylist.findIndex(song => song.id === currentSong.id);
+                
+                shuffleBtn.style.background = 'none';
+                shuffleBtn.style.color = '#ffffff';
+            }
+        }
+
+        // ===== REPEAT FUNCTIONALITY =====
+        function toggleRepeat() {
+            isRepeatOn = !isRepeatOn;
+            
+            if (isRepeatOn) {
+                repeatBtn.style.background = 'rgba(138, 43, 226, 0.5)';
+                repeatBtn.style.color = '#00ffff';
+            } else {
+                repeatBtn.style.background = 'none';
+                repeatBtn.style.color = '#ffffff';
+            }
+        }
+
+        // ===== VOLUME CONTROL =====
+        function setVolume(value) {
+            audioPlayer.volume = value / 100;
+        }
+
+        // ===== RECOMMENDATIONS =====
+        function loadRecommendations(currentSongId) {
+            const currentSong = songs.find(song => song.id === currentSongId);
+            const recommendationsList = document.getElementById('recommendationsList');
+            
+            if (!currentSong || !currentSong.related) {
+                recommendationsList.innerHTML = '<p style="color: #cccccc;">No recommendations available</p>';
+                return;
+            }
+
+            recommendationsList.innerHTML = '';
+            
+            currentSong.related.forEach(relatedId => {
+                const relatedSong = songs.find(song => song.id === relatedId);
+                if (!relatedSong) return;
+
+                const recItem = document.createElement('div');
+                recItem.className = 'recommendation-item';
+                recItem.onclick = () => {
+                    const songIndex = playlist.findIndex(song => song.id === relatedId);
+                    if (songIndex !== -1) {
+                        playSong(songIndex);
+                    }
+                };
+
+                recItem.innerHTML = `
+                    <img src="${relatedSong.thumbnail}" alt="${relatedSong.title}" class="rec-thumbnail"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiNjY2MiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7wn46tPC90ZXh0Pjwvc3ZnPg==">
+                    <div class="rec-info">
+                        <div class="rec-title">${relatedSong.title}</div>
+                        <div class="rec-artist">${relatedSong.artist}</div>
+                    </div>
+                `;
+
+                recommendationsList.appendChild(recItem);
+            });
+        }
+
+        // ===== TOGGLE RECOMMENDATIONS SIDEBAR =====
+        function toggleRecommendations() {
+            recommendations.classList.toggle('active');
+        }
+
+        // ===== RANDOM SONG FUNCTIONALITY =====
+        function playRandomSong() {
+            const randomIndex = Math.floor(Math.random() * playlist.length);
+            playSong(randomIndex);
+        }
+
+        // ===== SHUFFLE ENTIRE PLAYLIST =====
+        function shufflePlaylist() {
+            // Create completely shuffled playlist
+            playlist = [...originalPlaylist];
+            for (let i = playlist.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [playlist[i], playlist[j]] = [playlist[j], playlist[i]];
+            }
+            
+            // Play first song of shuffled playlist
+            currentSongIndex = 0;
+            playSong(0);
+            
+            // Enable shuffle mode
+            isShuffleOn = true;
+            shuffleBtn.style.background = 'rgba(138, 43, 226, 0.5)';
+            shuffleBtn.style.color = '#00ffff';
+        }
+
+        // ===== GENERATE AUDIO VISUALIZER =====
+        function generateVisualizer() {
+            const visualizer = document.querySelector('.visualizer');
+            
+            // Create 50 visualizer bars
+            for (let i = 0; i < 50; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'visualizer-bar';
+                bar.style.left = `${i * 2}%`;
+                bar.style.animationDelay = `${Math.random() * 0.5}s`;
+                bar.style.animationDuration = `${0.5 + Math.random() * 0.5}s`;
+                visualizer.appendChild(bar);
+            }
+        }
+
+        // ===== SETUP AUDIO EVENT LISTENERS =====
+        function setupAudioEvents() {
+            // When song ends
+            audioPlayer.addEventListener('ended', () => {
+                if (isRepeatOn) {
+                    // Repeat current song
+                    audioPlayer.currentTime = 0;
+                    audioPlayer.play();
+                } else {
+                    // Move to next song
+                    nextSong();
+                }
+            });
+
+            // When audio is paused
+            audioPlayer.addEventListener('pause', () => {
+                isPlaying = false;
+                updatePlayPauseButton();
+            });
+
+            // When audio starts playing
+            audioPlayer.addEventListener('play', () => {
+                isPlaying = true;
+                updatePlayPauseButton();
+            });
+
+            // Handle loading errors
+            audioPlayer.addEventListener('error', (e) => {
+                console.error('Audio loading error:', e);
+                alert('Error loading audio file. Please check if the file exists and is accessible.');
+                isPlaying = false;
+                updatePlayPauseButton();
+            });
+
+            // Set initial volume
+            audioPlayer.volume = 0.5;
+        }
+
+        // ===== KEYBOARD SHORTCUTS =====
+        document.addEventListener('keydown', (e) => {
+            // Prevent default behavior when player is active
+            if (musicPlayer.classList.contains('active')) {
+                switch(e.code) {
+                    case 'Space':
+                        e.preventDefault();
+                        togglePlay();
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        nextSong();
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        previousSong();
+                        break;
+                    case 'KeyS':
+                        e.preventDefault();
+                        toggleShuffle();
+                        break;
+                    case 'KeyR':
+                        e.preventDefault();
+                        toggleRepeat();
+                        break;
+                }
+            }
+        });
+
+        // ===== UTILITY FUNCTIONS =====
+
+        // Add new song function (for easy expansion)
+        function addNewSong(songData) {
+            // Validate song data
+            if (!songData.id || !songData.title || !songData.videoPath || !songData.thumbnail) {
+                console.error('Invalid song data. Required fields: id, title, videoPath, thumbnail');
+                return false;
+            }
+
+            // Add default values
+            const newSong = {
+                artist: songData.artist || 'Unknown Artist',
+                description: songData.description || 'New phonk track',
+                related: songData.related || [],
+                ...songData
+            };
+
+            // Add to songs array
+            songs.push(newSong);
+            originalPlaylist.push(newSong);
+            
+            // Update playlist if not shuffled
+            if (!isShuffleOn) {
+                playlist.push(newSong);
+            }
+
+            // Refresh the grid
+            loadSongsToGrid();
+            
+            console.log(`Added new song: ${newSong.title}`);
+            return true;
+        }
+
+        // Remove song function
+        function removeSong(songId) {
+            const songIndex = songs.findIndex(song => song.id === songId);
+            if (songIndex === -1) {
+                console.error('Song not found');
+                return false;
+            }
+
+            // Remove from all arrays
+            songs.splice(songIndex, 1);
+            originalPlaylist.splice(songIndex, 1);
+            
+            const playlistIndex = playlist.findIndex(song => song.id === songId);
+            if (playlistIndex !== -1) {
+                playlist.splice(playlistIndex, 1);
+            }
+
+            // Refresh the grid
+            loadSongsToGrid();
+            
+            console.log(`Removed song with ID: ${songId}`);
+            return true;
+        }
+
+        // Search songs function (for future expansion)
+        function searchSongs(query) {
+            const lowerQuery = query.toLowerCase();
+            return songs.filter(song => 
+                song.title.toLowerCase().includes(lowerQuery) ||
+                song.artist.toLowerCase().includes(lowerQuery) ||
+                song.description.toLowerCase().includes(lowerQuery)
+            );
+        }
+
+        // ===== INITIALIZE ON PAGE LOAD =====
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeWebsite();
+            
+            // Add some fun console messages
+            console.log('🎵 PHONKIFY LOADED SUCCESSFULLY 🎵');
+            console.log('Available functions for developers:');
+            console.log('- addNewSong(songData): Add a new song');
+            console.log('- removeSong(songId): Remove a song');
+            console.log('- searchSongs(query): Search for songs');
+            console.log('- playSong(index): Play song by index');
+            console.log('- playRandomSong(): Play random song');
+            console.log('- shufflePlaylist(): Shuffle and play');
+            console.log('');
+            console.log('Keyboard shortcuts:');
+            console.log('- Space: Play/Pause');
+            console.log('- Arrow Left: Previous song');
+            console.log('- Arrow Right: Next song');
+            console.log('- S: Toggle shuffle');
+            console.log('- R: Toggle repeat');
+        });
+
+        // ===== DEVELOPER UTILITIES =====
+        // Make functions globally available for easy debugging and expansion
+        window.PhonkifyUtils = {
+            addNewSong,
+            removeSong,
+            searchSongs,
+            playSong,
+            playRandomSong,
+            shufflePlaylist,
+            songs,
+            playlist
+        };
+    </script>
+</body>
+</html>
+                    
